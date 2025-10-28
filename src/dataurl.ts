@@ -85,11 +85,21 @@ export async function resourceToDataURL(
       resourceUrl,
       options.fetchRequestInit,
       ({ res, result }) => {
+        // Previously this would prioritise the presupplied content-type.
+        // However it's more correct to trust the response rather than the extension-sniffed guess.
+        /*
         if (!contentType) {
           // eslint-disable-next-line no-param-reassign
           contentType = res.headers.get('Content-Type') || ''
         }
-        return getContentFromDataUrl(result)
+        */
+        if (res.headers.has('Content-Type')) {
+          // eslint-disable-next-line no-param-reassign
+          contentType = res.headers.get('Content-Type');
+        }
+        // eslint-disable-next-line no-param-reassign
+        contentType = contentType || '';
+        return getContentFromDataUrl(result);
       },
     )
     dataURL = makeDataUrl(content, contentType!)
