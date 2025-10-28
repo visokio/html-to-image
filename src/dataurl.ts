@@ -95,10 +95,11 @@ export async function resourceToDataURL(
         */
         if (res.headers.has('Content-Type')) {
           // eslint-disable-next-line no-param-reassign
-          contentType = res.headers.get('Content-Type');
+          contentType = res.headers.get('Content-Type') || '';
+        } else {
+          // eslint-disable-next-line no-param-reassign
+          contentType = contentType || '';
         }
-        // eslint-disable-next-line no-param-reassign
-        contentType = contentType || '';
         return getContentFromDataUrl(result);
       },
     )
