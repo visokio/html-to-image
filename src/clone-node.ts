@@ -119,6 +119,45 @@ async function cloneChildren<T extends HTMLElement>(
   return clonedNode
 }
 
+// Props that get normalized/dropped by getComputedStyle but that we want to
+// preserve verbatim when they’re set inline.
+const FRAGILE_INLINE_PROPS = [
+  'display',
+  '-webkit-box-orient',
+  '-webkit-line-clamp',
+  'line-clamp',
+  'white-space',
+  'overflow',
+  'text-overflow',
+] as const
+
+// Re-apply inline values for fragile props so they override computed ones.
+function overrideFragileFromInline<T extends HTMLElement>(
+  nativeNode: T,
+  clonedNode: T,
+) {
+  const inline = nativeNode.style as CSSStyleDeclaration
+
+  FRAGILE_INLINE_PROPS.forEach((prop) => {
+    const val = inline.getPropertyValue(prop)
+    if (!val) return // not set inline; skip
+
+    const priority = inline.getPropertyPriority(prop) // preserves !important
+    clonedNode.style.setProperty(prop, val, priority)
+  })
+
+  // Special guard: if inline display contained -webkit-box, enforce it,
+  // because computed styles normalize it to flow-root.
+  const inlineDisplay = inline.getPropertyValue('display')
+  if (inlineDisplay && /-webkit-box/i.test(inlineDisplay)) {
+    clonedNode.style.setProperty(
+      'display',
+      '-webkit-box',
+      inline.getPropertyPriority('display'),
+    )
+  }
+}
+
 function cloneCSSStyle<T extends HTMLElement>(
   nativeNode: T,
   clonedNode: T,
@@ -161,6 +200,9 @@ function cloneCSSStyle<T extends HTMLElement>(
       )
     })
   }
+
+  // Ensure inline vendor props survive (e.g., display:-webkit-box, -webkit-line-clamp)
+  overrideFragileFromInline(nativeNode, clonedNode)
 }
 
 function cloneInputValue<T extends HTMLElement>(nativeNode: T, clonedNode: T) {
