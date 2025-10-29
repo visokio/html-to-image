@@ -259,3 +259,31 @@ export const isInstanceOfElement = <
     isInstanceOfElement(nodePrototype, instance)
   )
 }
+
+/**
+ * Properties to preserve in iframe body in attempt to match UA reset styles,
+ * when inlining as part of DOM cloning. Cautiously narrow, expand in future as needed.
+ * Only performed when options.preserveIframeBodyStyles is true.
+ */
+export const IFRAME_BODY_STYLE_PROPS: string[] = [
+  'margin-top',
+  'margin-right',
+  'margin-bottom',
+  'margin-left',
+]
+
+export function copyComputedProperties(
+  sourceEl: HTMLElement,
+  targetEl: HTMLElement,
+  props: string[],
+  priority: '' | 'important' = '',
+): void {
+  const view = sourceEl.ownerDocument?.defaultView
+  if (!view) return
+
+  const cs = view.getComputedStyle(sourceEl)
+  props.forEach((prop) => {
+    const val = cs.getPropertyValue(prop)
+    if (val) targetEl.style.setProperty(prop, val, priority)
+  })
+}

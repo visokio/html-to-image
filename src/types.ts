@@ -101,4 +101,11 @@ export interface Options {
    * An event handler for the error event when any image in html has problem with loading.
    */
   onImageErrorHandler?: OnErrorEventHandler
+
+  /**
+   * Opt-in: when cloning a same-origin <iframe>, copy selected computed
+   * styles from the iframe's <body> onto a wrapper in the clone.
+   * Defaults to false.
+   */
+  preserveIframeBodyStyles?: boolean
 }

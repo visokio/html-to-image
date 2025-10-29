@@ -5,6 +5,8 @@ import {
   toArray,
   isInstanceOfElement,
   getStyleProperties,
+  IFRAME_BODY_STYLE_PROPS,
+  copyComputedProperties,
 } from './util'
 import { getMimeType } from './mimes'
 import { resourceToDataURL } from './dataurl'
@@ -36,18 +38,35 @@ async function cloneVideoElement(video: HTMLVideoElement, options: Options) {
 
 async function cloneIFrameElement(iframe: HTMLIFrameElement, options: Options) {
   try {
-    if (iframe?.contentDocument?.body) {
-      return (await cloneNode(
-        iframe.contentDocument.body,
+    const doc = iframe.contentDocument
+    const body = doc?.body
+
+    if (body) {
+      // Clone the iframe’s <body> as-is
+      const clonedBody = (await cloneNode(
+        body,
         options,
         true,
       )) as HTMLBodyElement
+
+      // Opt-in: copy selected computed styles (currently margins)
+      if (options.preserveIframeBodyStyles === true) {
+        // set them to be priority, so we don't nuke them later in cloneCSSStyle
+        copyComputedProperties(
+          body,
+          clonedBody,
+          IFRAME_BODY_STYLE_PROPS,
+          'important',
+        )
+      }
+
+      return clonedBody
     }
   } catch {
-    // Failed to clone iframe
+    // Failed (likely cross-origin)
   }
 
-  return iframe.cloneNode(false) as HTMLIFrameElement
+  return iframe.cloneNode(false) as HTMLElement
 }
 
 async function cloneSingleNode<T extends HTMLElement>(
@@ -174,6 +193,14 @@ function cloneCSSStyle<T extends HTMLElement>(
     targetStyle.transformOrigin = sourceStyle.transformOrigin
   } else {
     getStyleProperties(options).forEach((name) => {
+      if (options.preserveIframeBodyStyles === true) {
+        const targetPriority = targetStyle.getPropertyPriority(name)
+        if (targetPriority === 'important') {
+          // keep our preserved value e.g. from iframe body
+          return
+        }
+      }
+
       let value = sourceStyle.getPropertyValue(name)
       if (name === 'font-size' && value.endsWith('px')) {
         const reducedFont =
