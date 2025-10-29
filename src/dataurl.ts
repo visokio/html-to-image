@@ -95,12 +95,12 @@ export async function resourceToDataURL(
         */
         if (res.headers.has('Content-Type')) {
           // eslint-disable-next-line no-param-reassign
-          contentType = res.headers.get('Content-Type') || '';
+          contentType = res.headers.get('Content-Type') || ''
         } else {
           // eslint-disable-next-line no-param-reassign
-          contentType = contentType || '';
+          contentType = contentType || ''
         }
-        return getContentFromDataUrl(result);
+        return getContentFromDataUrl(result)
       },
     )
     dataURL = makeDataUrl(content, contentType!)
